@@ -4,6 +4,7 @@ import type { BrewGuideConfig } from '../config.js';
 import { generateId } from '../lib/ids.js';
 import { now } from '../lib/timestamps.js';
 import { getErrorMessage, invalidParamsResult, isRecord, textResult } from '../lib/toolResults.js';
+import type { CoffeeBean } from '../types/coffeeBean.js';
 
 /**
  * brew_guide_upsert_bean 工具的参数 schema。
@@ -33,7 +34,7 @@ export const upsertBeanParameters = Type.Object({
 export async function executeUpsertBean(
   supabase: SupabaseClient,
   config: BrewGuideConfig,
-  params: { bean: Record<string, unknown> } | undefined,
+  params: { bean: Partial<CoffeeBean> & Record<string, unknown> } | undefined,
 ) {
   if (!isRecord(params) || !isRecord(params.bean)) {
     return invalidParamsResult('brew_guide_upsert_bean', '{ bean: object }');
