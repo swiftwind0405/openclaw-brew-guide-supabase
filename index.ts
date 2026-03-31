@@ -1,10 +1,12 @@
 import { definePluginEntry } from 'openclaw/plugin-sdk/plugin-entry';
+import { Type } from '@sinclair/typebox';
 import { resolveConfig, type BrewGuideConfig } from './src/config.js';
 import { createSupabaseClient } from './src/client.js';
 import { upsertBeanParameters, executeUpsertBean } from './src/tools/upsertBean.js';
 import { upsertNoteParameters, executeUpsertNote } from './src/tools/upsertNote.js';
 import { deleteRecordsParameters, executeDeleteRecords } from './src/tools/deleteRecords.js';
 import { listRecentParameters, executeListRecent } from './src/tools/listRecent.js';
+import { executeGetAllRoasters } from './src/tools/getAllRoasters.js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export default definePluginEntry({
@@ -85,6 +87,20 @@ export default definePluginEntry({
       async execute(_id, params) {
         const { config, supabase } = getConfigAndClient();
         return executeListRecent(supabase, config, params as { table: string; limit?: number; includeDeleted?: boolean });
+      },
+    });
+
+    // ── get all roasters ─────────────────────────────────────────
+    // 纯读取工具，无参数，返回所有烘焙商列表
+    api.registerTool({
+      name: 'brew_guide_get_all_roasters',
+      description:
+        'Get all distinct roasters from coffee beans. ' +
+        'Calls the get_all_roasters RPC. No parameters needed.',
+      parameters: Type.Object({}),
+      async execute() {
+        const { supabase } = getConfigAndClient();
+        return executeGetAllRoasters(supabase);
       },
     });
   },
