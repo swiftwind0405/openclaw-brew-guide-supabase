@@ -4,7 +4,7 @@ OpenClaw 工具插件，让 agent 能直接操作 [brew-guide](https://github.co
 
 ## 功能
 
-提供 4 个 agent 工具：
+提供 5 个 agent 工具：
 
 | 工具名 | 说明 | 类型 |
 |--------|------|------|
@@ -12,8 +12,9 @@ OpenClaw 工具插件，让 agent 能直接操作 [brew-guide](https://github.co
 | `brew_guide_upsert_note` | 新增/更新冲煮记录 | optional（需 allowlist） |
 | `brew_guide_delete_records` | 软删除记录 | optional（需 allowlist） |
 | `brew_guide_list_recent` | 查询最近记录 | required（默认可用） |
+| `brew_guide_get_all_roasters` | 获取所有去重的烘焙商列表 | required（默认可用） |
 
-所有写入工具标记为 `optional`，需显式加入 allowlist 才能使用。查询工具 `list_recent` 无副作用，默认可用。
+所有写入工具标记为 `optional`，需显式加入 allowlist 才能使用。查询工具 `list_recent` 和 `get_all_roasters` 无副作用，默认可用。
 
 ## 前置条件
 
@@ -67,7 +68,8 @@ openclaw gateway restart
       "brew_guide_upsert_bean",
       "brew_guide_upsert_note",
       "brew_guide_delete_records",
-      "brew_guide_list_recent"
+      "brew_guide_list_recent",
+      "brew_guide_get_all_roasters"
     ]
   }
 }
@@ -101,7 +103,8 @@ openclaw gateway restart
       "brew_guide_upsert_bean",
       "brew_guide_upsert_note",
       "brew_guide_delete_records",
-      "brew_guide_list_recent"
+      "brew_guide_list_recent",
+      "brew_guide_get_all_roasters"
     ]
 
     // 方式二：允许该插件的所有工具（等价于上面）
@@ -145,7 +148,8 @@ brew-guide-plugin/
     │   ├── upsertBean.ts        # brew_guide_upsert_bean
     │   ├── upsertNote.ts        # brew_guide_upsert_note
     │   ├── deleteRecords.ts     # brew_guide_delete_records
-    │   └── listRecent.ts        # brew_guide_list_recent
+    │   ├── listRecent.ts        # brew_guide_list_recent
+    │   └── getAllRoasters.ts    # brew_guide_get_all_roasters
     ├── lib/
     │   ├── ids.ts               # UUID 生成
     │   ├── timestamps.ts        # ISO 时间戳
