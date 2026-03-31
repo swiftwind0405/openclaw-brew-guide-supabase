@@ -162,6 +162,9 @@ npm install
 
 # 类型检查
 npx tsc --noEmit
+
+# 运行回归测试
+npm test
 ```
 
 ## License

@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { BrewGuideConfig } from '../config.js';
 import { generateId } from '../lib/ids.js';
 import { now } from '../lib/timestamps.js';
+import { getErrorMessage, invalidParamsResult, isRecord, textResult } from '../lib/toolResults.js';
 
 /**
  * brew_guide_upsert_bean 工具的参数 schema。
@@ -32,28 +33,36 @@ export const upsertBeanParameters = Type.Object({
 export async function executeUpsertBean(
   supabase: SupabaseClient,
   config: BrewGuideConfig,
-  params: { bean: Record<string, unknown> },
+  params: { bean: Record<string, unknown> } | undefined,
 ) {
-  const bean = params.bean ?? {};
+  if (!isRecord(params) || !isRecord(params.bean)) {
+    return invalidParamsResult('brew_guide_upsert_bean', '{ bean: object }');
+  }
+
+  const bean = params.bean;
   const id = (bean.id as string) || generateId('bean');
   const ts = now();
 
-  const { error } = await supabase
-    .from('coffee_beans')
-    .upsert(
-      {
-        id,
-        user_id: config.brewGuideUserId,
-        data: { ...bean, id },
-        updated_at: ts,
-        deleted_at: null,
-      },
-      { onConflict: 'id,user_id' },
-    );
+  try {
+    const { error } = await supabase
+      .from('coffee_beans')
+      .upsert(
+        {
+          id,
+          user_id: config.brewGuideUserId,
+          data: { ...bean, id },
+          updated_at: ts,
+          deleted_at: null,
+        },
+        { onConflict: 'id,user_id' },
+      );
 
-  if (error) {
-    return { content: [{ type: 'text' as const, text: `Failed to upsert bean: ${error.message}` }] };
+    if (error) {
+      return textResult(`Failed to upsert bean: ${error.message}`);
+    }
+
+    return textResult(`Upserted coffee bean ${id} at ${ts}.`);
+  } catch (error) {
+    return textResult(`Failed to upsert bean: ${getErrorMessage(error)}`);
   }
-
-  return { content: [{ type: 'text' as const, text: `Upserted coffee bean ${id} at ${ts}.` }] };
 }

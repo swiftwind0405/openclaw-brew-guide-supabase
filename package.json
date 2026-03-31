@@ -30,8 +30,9 @@
     "typescript": "^5.8.0"
   },
   "scripts": {
+    "test": "npx tsc && node --test tests/*.test.mjs",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run typecheck"
+    "prepublishOnly": "npm run typecheck && npm test"
   },
   "openclaw": {
     "extensions": ["./index.ts"],

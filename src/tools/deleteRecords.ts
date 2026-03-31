@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { BrewGuideConfig } from '../config.js';
 import { isValidTable, VALID_TABLES } from '../lib/tables.js';
 import { now } from '../lib/timestamps.js';
+import { getErrorMessage, invalidParamsResult, isRecord, textResult } from '../lib/toolResults.js';
 
 /**
  * brew_guide_delete_records 工具的参数 schema。
@@ -24,31 +25,43 @@ export const deleteRecordsParameters = Type.Object({
 export async function executeDeleteRecords(
   supabase: SupabaseClient,
   config: BrewGuideConfig,
-  params: { table: string; ids: string[] },
+  params: { table: string; ids: string[] } | undefined,
 ) {
+  if (!isRecord(params) || typeof params.table !== 'string' || !Array.isArray(params.ids)) {
+    return invalidParamsResult('brew_guide_delete_records', '{ table: string, ids: string[] }');
+  }
+
   const { table, ids } = params;
 
   if (!isValidTable(table)) {
-    return { content: [{ type: 'text' as const, text: `Invalid table: ${table}. Must be one of: ${VALID_TABLES.join(', ')}` }] };
+    return textResult(`Invalid table: ${table}. Must be one of: ${VALID_TABLES.join(', ')}`);
   }
 
   if (!ids || ids.length === 0) {
-    return { content: [{ type: 'text' as const, text: 'No IDs provided for deletion.' }] };
+    return textResult('No IDs provided for deletion.');
   }
 
   const ts = now();
 
-  const { error, count } = await supabase
-    .from(table)
-    .update({ deleted_at: ts, updated_at: ts })
-    .eq('user_id', config.brewGuideUserId)
-    .in('id', ids);
+  try {
+    const { error, count } = await supabase
+      .from(table)
+      .update({ deleted_at: ts, updated_at: ts }, { count: 'exact' })
+      .eq('user_id', config.brewGuideUserId)
+      .in('id', ids);
 
-  if (error) {
-    return { content: [{ type: 'text' as const, text: `Failed to delete records: ${error.message}` }] };
+    if (error) {
+      return textResult(`Failed to delete records: ${error.message}`);
+    }
+
+    if (count === null) {
+      return textResult(
+        `Soft-delete request completed for ${table} at ${ts}, but Supabase did not return a row count, so the matched record count is unable to confirm.`,
+      );
+    }
+
+    return textResult(`Soft-deleted ${count} record(s) from ${table} at ${ts}.`);
+  } catch (error) {
+    return textResult(`Failed to delete records: ${getErrorMessage(error)}`);
   }
-
-  return {
-    content: [{ type: 'text' as const, text: `Soft-deleted ${count ?? ids.length} record(s) from ${table} at ${ts}.` }],
-  };
 }

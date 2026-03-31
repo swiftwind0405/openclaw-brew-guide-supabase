@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { BrewGuideConfig } from '../config.js';
 import { generateId } from '../lib/ids.js';
 import { now } from '../lib/timestamps.js';
+import { getErrorMessage, invalidParamsResult, isRecord, textResult } from '../lib/toolResults.js';
 
 /**
  * brew_guide_upsert_note 工具的参数 schema。
@@ -32,28 +33,36 @@ export const upsertNoteParameters = Type.Object({
 export async function executeUpsertNote(
   supabase: SupabaseClient,
   config: BrewGuideConfig,
-  params: { note: Record<string, unknown> },
+  params: { note: Record<string, unknown> } | undefined,
 ) {
-  const note = params.note ?? {};
+  if (!isRecord(params) || !isRecord(params.note)) {
+    return invalidParamsResult('brew_guide_upsert_note', '{ note: object }');
+  }
+
+  const note = params.note;
   const id = (note.id as string) || generateId('note');
   const ts = now();
 
-  const { error } = await supabase
-    .from('brewing_notes')
-    .upsert(
-      {
-        id,
-        user_id: config.brewGuideUserId,
-        data: { ...note, id },
-        updated_at: ts,
-        deleted_at: null,
-      },
-      { onConflict: 'id,user_id' },
-    );
+  try {
+    const { error } = await supabase
+      .from('brewing_notes')
+      .upsert(
+        {
+          id,
+          user_id: config.brewGuideUserId,
+          data: { ...note, id },
+          updated_at: ts,
+          deleted_at: null,
+        },
+        { onConflict: 'id,user_id' },
+      );
 
-  if (error) {
-    return { content: [{ type: 'text' as const, text: `Failed to upsert note: ${error.message}` }] };
+    if (error) {
+      return textResult(`Failed to upsert note: ${error.message}`);
+    }
+
+    return textResult(`Upserted brewing note ${id} at ${ts}.`);
+  } catch (error) {
+    return textResult(`Failed to upsert note: ${getErrorMessage(error)}`);
   }
-
-  return { content: [{ type: 'text' as const, text: `Upserted brewing note ${id} at ${ts}.` }] };
 }
