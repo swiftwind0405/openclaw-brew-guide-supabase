@@ -1,5 +1,5 @@
 {
-  "id": "brew-guide-supabase",
+  "id": "openclaw-brew-guide-supabase",
   "name": "Brew Guide Supabase",
   "description": "Adds agent tools for operating brew-guide data in Supabase.",
   "configSchema": {
@@ -19,7 +19,10 @@
         "default": "default_user"
       }
     },
-    "required": ["supabaseUrl", "supabaseServiceRoleKey"]
+    "required": [
+      "supabaseUrl",
+      "supabaseServiceRoleKey"
+    ]
   },
   "uiHints": {
     "supabaseUrl": {
