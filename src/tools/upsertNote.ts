@@ -40,10 +40,16 @@ export async function executeUpsertNote(
   }
 
   const note = params.note;
+  const dataJson = JSON.stringify(note);
+  if (dataJson.length > 64_000) {
+    return textResult('Note data exceeds 64 KB limit. Reduce payload size before retrying.');
+  }
+
   const id = (note.id as string) || generateId('note');
   const ts = now();
 
   try {
+    // deleted_at: null 确保 upsert 同时恢复已软删除的记录
     const { error } = await supabase
       .from('brewing_notes')
       .upsert(

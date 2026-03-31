@@ -40,10 +40,16 @@ export async function executeUpsertBean(
   }
 
   const bean = params.bean;
+  const dataJson = JSON.stringify(bean);
+  if (dataJson.length > 64_000) {
+    return textResult('Bean data exceeds 64 KB limit. Reduce payload size before retrying.');
+  }
+
   const id = (bean.id as string) || generateId('bean');
   const ts = now();
 
   try {
+    // deleted_at: null 确保 upsert 同时恢复已软删除的记录
     const { error } = await supabase
       .from('coffee_beans')
       .upsert(

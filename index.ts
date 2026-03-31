@@ -1,10 +1,11 @@
 import { definePluginEntry } from 'openclaw/plugin-sdk/plugin-entry';
-import { resolveConfig } from './src/config.js';
+import { resolveConfig, type BrewGuideConfig } from './src/config.js';
 import { createSupabaseClient } from './src/client.js';
 import { upsertBeanParameters, executeUpsertBean } from './src/tools/upsertBean.js';
 import { upsertNoteParameters, executeUpsertNote } from './src/tools/upsertNote.js';
 import { deleteRecordsParameters, executeDeleteRecords } from './src/tools/deleteRecords.js';
 import { listRecentParameters, executeListRecent } from './src/tools/listRecent.js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export default definePluginEntry({
   id: 'brew-guide-supabase',
@@ -12,6 +13,17 @@ export default definePluginEntry({
   description: 'Agent tools for brew-guide Supabase sync tables.',
 
   register(api) {
+    let cachedConfig: BrewGuideConfig | null = null;
+    let cachedClient: SupabaseClient | null = null;
+
+    function getConfigAndClient() {
+      if (!cachedConfig) {
+        cachedConfig = resolveConfig(api.pluginConfig);
+        cachedClient = createSupabaseClient(cachedConfig);
+      }
+      return { config: cachedConfig, supabase: cachedClient! };
+    }
+
     // ── upsert bean ──────────────────────────────────────────────
     api.registerTool(
       {
@@ -22,8 +34,7 @@ export default definePluginEntry({
           'If id is omitted, a new UUID is generated.',
         parameters: upsertBeanParameters,
         async execute(_id, params) {
-          const config = resolveConfig(api.pluginConfig);
-          const supabase = createSupabaseClient(config);
+          const { config, supabase } = getConfigAndClient();
           return executeUpsertBean(supabase, config, params as { bean: Record<string, unknown> });
         },
       },
@@ -40,8 +51,7 @@ export default definePluginEntry({
           'If id is omitted, a new UUID is generated.',
         parameters: upsertNoteParameters,
         async execute(_id, params) {
-          const config = resolveConfig(api.pluginConfig);
-          const supabase = createSupabaseClient(config);
+          const { config, supabase } = getConfigAndClient();
           return executeUpsertNote(supabase, config, params as { note: Record<string, unknown> });
         },
       },
@@ -57,8 +67,7 @@ export default definePluginEntry({
           'Sets deleted_at and updated_at to now. Does NOT physically delete rows.',
         parameters: deleteRecordsParameters,
         async execute(_id, params) {
-          const config = resolveConfig(api.pluginConfig);
-          const supabase = createSupabaseClient(config);
+          const { config, supabase } = getConfigAndClient();
           return executeDeleteRecords(supabase, config, params as { table: string; ids: string[] });
         },
       },
@@ -74,8 +83,7 @@ export default definePluginEntry({
         'Returns summary fields only. Use this to check context before writing.',
       parameters: listRecentParameters,
       async execute(_id, params) {
-        const config = resolveConfig(api.pluginConfig);
-        const supabase = createSupabaseClient(config);
+        const { config, supabase } = getConfigAndClient();
         return executeListRecent(supabase, config, params as { table: string; limit?: number; includeDeleted?: boolean });
       },
     });

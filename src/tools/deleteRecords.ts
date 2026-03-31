@@ -37,10 +37,6 @@ export async function executeDeleteRecords(
     return textResult(`Invalid table: ${table}. Must be one of: ${VALID_TABLES.join(', ')}`);
   }
 
-  if (!ids || ids.length === 0) {
-    return textResult('No IDs provided for deletion.');
-  }
-
   const ts = now();
 
   try {

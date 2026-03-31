@@ -106,6 +106,84 @@ test('executeDeleteRecords reports the exact matched row count when Supabase pro
   assert.match(result.content[0].text, /Soft-deleted 1 record\(s\)/);
 });
 
+test('executeUpsertBean succeeds and returns the upserted bean id', async () => {
+  let capturedRow = null;
+  const supabase = {
+    from(table) {
+      assert.equal(table, 'coffee_beans');
+      return {
+        upsert(row, opts) {
+          capturedRow = row;
+          assert.deepEqual(opts, { onConflict: 'id,user_id' });
+          return Promise.resolve({ error: null });
+        },
+      };
+    },
+  };
+
+  const result = await executeUpsertBean(supabase, config, {
+    bean: { name: 'Ethiopia Yirgacheffe', origin: 'Ethiopia' },
+  });
+
+  assert.match(result.content[0].text, /Upserted coffee bean bean_/);
+  assert.equal(capturedRow.user_id, 'default_user');
+  assert.equal(capturedRow.data.name, 'Ethiopia Yirgacheffe');
+  assert.equal(capturedRow.deleted_at, null);
+});
+
+test('executeUpsertNote succeeds and returns the upserted note id', async () => {
+  let capturedRow = null;
+  const supabase = {
+    from(table) {
+      assert.equal(table, 'brewing_notes');
+      return {
+        upsert(row, opts) {
+          capturedRow = row;
+          assert.deepEqual(opts, { onConflict: 'id,user_id' });
+          return Promise.resolve({ error: null });
+        },
+      };
+    },
+  };
+
+  const result = await executeUpsertNote(supabase, config, {
+    note: { method: 'V60', score: 85 },
+  });
+
+  assert.match(result.content[0].text, /Upserted brewing note note_/);
+  assert.equal(capturedRow.user_id, 'default_user');
+  assert.equal(capturedRow.data.method, 'V60');
+  assert.equal(capturedRow.deleted_at, null);
+});
+
+test('executeUpsertBean rejects data exceeding 64 KB', async () => {
+  const supabase = {
+    from() {
+      throw new Error('should not reach database');
+    },
+  };
+
+  const result = await executeUpsertBean(supabase, config, {
+    bean: { name: 'huge', notes: 'x'.repeat(70_000) },
+  });
+
+  assert.match(result.content[0].text, /exceeds 64 KB limit/);
+});
+
+test('executeUpsertNote rejects data exceeding 64 KB', async () => {
+  const supabase = {
+    from() {
+      throw new Error('should not reach database');
+    },
+  };
+
+  const result = await executeUpsertNote(supabase, config, {
+    note: { memo: 'x'.repeat(70_000) },
+  });
+
+  assert.match(result.content[0].text, /exceeds 64 KB limit/);
+});
+
 test('executeListRecent includes descriptive fields for custom equipment rows', async () => {
   const supabase = {
     from() {

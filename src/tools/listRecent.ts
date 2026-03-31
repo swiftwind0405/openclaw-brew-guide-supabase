@@ -15,7 +15,7 @@ const FALLBACK_FIELDS = ['name', 'title', 'label', 'brand', 'model', 'category',
 
 function pickSummaryFields(table: string, data: Record<string, unknown>) {
   const summary: Record<string, unknown> = {};
-  const candidates = [...(SUMMARY_FIELDS[table] ?? []), ...FALLBACK_FIELDS];
+  const candidates = [...new Set([...(SUMMARY_FIELDS[table] ?? []), ...FALLBACK_FIELDS])];
 
   for (const key of candidates) {
     const value = data[key];

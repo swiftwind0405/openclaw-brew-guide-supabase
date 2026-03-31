@@ -10,7 +10,7 @@ declare module 'openclaw/plugin-sdk/plugin-entry' {
     description: string;
     parameters: unknown;
     execute(id: string, params: unknown): Promise<{
-      content: Array<{ type: string; text: string }>;
+      content: Array<{ type: 'text'; text: string }>;
     }>;
   }
 
