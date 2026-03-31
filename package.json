@@ -1,0 +1,47 @@
+{
+  "name": "openclaw-brew-guide-supabase",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "OpenClaw plugin that adds agent tools for operating brew-guide data in Supabase.",
+  "author": "stanleyyang",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chuthree/brew-guide-plugin"
+  },
+  "keywords": [
+    "openclaw",
+    "openclaw-plugin",
+    "brew-guide",
+    "supabase",
+    "coffee"
+  ],
+  "files": [
+    "index.ts",
+    "src/",
+    "openclaw.plugin.json",
+    "README.md"
+  ],
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.0",
+    "@supabase/supabase-js": "^2.50.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run typecheck"
+  },
+  "openclaw": {
+    "extensions": ["./index.ts"],
+    "compat": {
+      "pluginApi": ">=2026.3.24-beta.2",
+      "minGatewayVersion": "2026.3.24-beta.2"
+    },
+    "build": {
+      "openclawVersion": "2026.3.24-beta.2",
+      "pluginSdkVersion": "2026.3.24-beta.2"
+    }
+  }
+}
