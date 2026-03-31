@@ -1,0 +1,45 @@
+{
+  "id": "brew-guide-supabase",
+  "name": "Brew Guide Supabase",
+  "description": "Adds agent tools for operating brew-guide data in Supabase.",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "supabaseUrl": {
+        "type": "string",
+        "minLength": 1
+      },
+      "supabaseServiceRoleKey": {
+        "type": "string",
+        "minLength": 1
+      },
+      "brewGuideUserId": {
+        "type": "string",
+        "default": "default_user"
+      }
+    },
+    "required": ["supabaseUrl", "supabaseServiceRoleKey"]
+  },
+  "uiHints": {
+    "supabaseUrl": {
+      "label": "Supabase URL",
+      "placeholder": "https://xxx.supabase.co"
+    },
+    "supabaseServiceRoleKey": {
+      "label": "Supabase service role key",
+      "sensitive": true
+    },
+    "brewGuideUserId": {
+      "label": "brew-guide user id"
+    }
+  },
+  "contracts": {
+    "tools": [
+      "brew_guide_upsert_bean",
+      "brew_guide_upsert_note",
+      "brew_guide_delete_records",
+      "brew_guide_list_recent"
+    ]
+  }
+}
