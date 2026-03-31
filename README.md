@@ -167,6 +167,21 @@ npx tsc --noEmit
 npm test
 ```
 
+## 发布
+
+本项目已配置 GitHub Actions 自动发布流程。当你想发布新版本到 npm 时，请按以下步骤操作：
+
+1. 更新 `package.json` 中的版本号：
+   ```bash
+   npm version patch  # 或者 minor, major
+   ```
+   这会自动修改文件并创建一个名为 `v*.*.*` 的 Git tag。
+2. 将代码和 tag 推送到远程仓库：
+   ```bash
+   git push origin main --tags
+   ```
+推送 tag 后，GitHub Actions 会自动执行类型检查、测试并发布到 npm。
+
 ## License
 
 MIT
