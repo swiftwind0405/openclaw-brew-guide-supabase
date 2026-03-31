@@ -41,6 +41,12 @@ openclaw plugins install -l ./brew-guide-plugin
 openclaw gateway restart
 ```
 
+## 一句话配置
+
+```
+帮我通过以下命令安装`openclaw-brew-guide-supabase`: `npm install -g openclaw-brew-guide-supabase` ，然后通过以下命令安装相关 skills `npx skills add github.com/swiftwind0405/openclaw-brew-guide-supabase -y -g` 。安装完成后，根据`https://github.com/swiftwind0405/openclaw-brew-guide-supabase/blob/master/README.md`进行openclaw里面的所有配置。
+```
+
 ## OpenClaw 配置
 
 在 `~/.openclaw/openclaw.json` 中添加以下配置：
