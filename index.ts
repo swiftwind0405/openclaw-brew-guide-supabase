@@ -10,7 +10,7 @@ import { executeGetAllRoasters } from './src/tools/getAllRoasters.js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export default definePluginEntry({
-  id: 'brew-guide-supabase',
+  id: 'openclaw-brew-guide-supabase',
   name: 'Brew Guide Supabase',
   description: 'Agent tools for brew-guide Supabase sync tables.',
 
