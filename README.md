@@ -178,7 +178,7 @@ npm test
    这会自动修改文件并创建一个名为 `v*.*.*` 的 Git tag。
 2. 将代码和 tag 推送到远程仓库：
    ```bash
-   git push origin main --tags
+   git push origin master --tags
    ```
 推送 tag 后，GitHub Actions 会自动执行类型检查、测试并发布到 npm。
 
