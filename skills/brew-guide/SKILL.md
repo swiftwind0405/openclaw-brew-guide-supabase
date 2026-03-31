@@ -1,15 +1,30 @@
 ---
 name: brew-guide
-description: Use when the user wants to manage coffee beans or brewing records, including adding beans from images, matching roaster names against existing records, querying entries, or updating coffee data.
+description: Use when the user wants to manage coffee beans, brewing notes, or other brew-guide records, including adding beans from images, recording brewing parameters, matching roaster names, querying/listing entries, or deleting records.
 ---
 
 # Brew Guide Skill
 
-Manage coffee beans and brewing records with complete data standards.
+Manage coffee beans, brewing notes, and related records with complete data standards.
 
 ## Core Principle
 
 **NEVER create incomplete records.** Always collect complete information before saving to database.
+
+## Available Tables
+
+This plugin operates on four Supabase tables:
+
+| Table | Description | Primary Tool |
+|---|---|---|
+| `coffee_beans` | 咖啡豆记录 | `brew_guide_upsert_bean` |
+| `brewing_notes` | 冲煮记录 | `brew_guide_upsert_note` |
+| `custom_equipments` | 自定义器具 | `brew_guide_list_recent` |
+| `custom_methods` | 自定义冲煮方式 | `brew_guide_list_recent` |
+
+All tables support `brew_guide_list_recent` (查询) and `brew_guide_delete_records` (软删除).
+
+---
 
 ## Bean Entry Standard Workflow
 
@@ -87,7 +102,7 @@ This creates an interactive workflow where user can iteratively complete the rec
 
 If the user corrects or supplements the roaster during this loop, run the roaster matching step again before final submission.
 
-## Complete Data Structure Standard
+## Complete Bean Data Structure
 
 When saving a coffee bean, include these fields:
 
@@ -134,7 +149,7 @@ When saving a coffee bean, include these fields:
 - "海拔：1920M" → include in notes, consider if altitude field exists
 - "批次：SL-09-Lot1" → include in notes
 
-## Example Complete Entry
+## Example Complete Bean Entry
 
 ```
 User: [image of coffee package]
@@ -191,7 +206,7 @@ Agent:
 [Call brew_guide_upsert_bean with complete data]
 ```
 
-## Anti-Patterns (DO NOT DO)
+## Bean Anti-Patterns (DO NOT DO)
 
 ❌ **NEVER** save record with only name and notes
 ❌ **NEVER** ignore capacity from "规格：150G"
@@ -200,7 +215,7 @@ Agent:
 ❌ **NEVER** skip asking for required fields (name, roaster, origin, process, variety)
 ❌ **NEVER** create record without checking existing data structure in database first
 
-## Required vs Optional Fields
+## Bean Required vs Optional Fields
 
 **Required (must have):**
 - name, roaster, origin, process, variety
@@ -211,8 +226,155 @@ Agent:
 **Optional (nice to have):**
 - flavor, notes, blendComponents, altitude info in notes
 
+---
+
+## Brewing Notes Workflow
+
+When user wants to record a brewing session, use `brew_guide_upsert_note`.
+
+### Step 1: Collect Brewing Parameters
+
+Ask for or extract the following information:
+
+- **beanId** — 关联的咖啡豆 ID（可先用 `brew_guide_list_recent` 查询 `coffee_beans` 获取）
+- **method** — 冲煮方式（V60, Kalita, AeroPress, Espresso, French Press 等）
+- **grindSize** — 研磨度设置（如 "Comandante 24 clicks", "EK43 9.5"）
+- **waterTemp** — 水温（摄氏度，数字）
+- **ratio** — 粉水比（如 "1:15", "1:16.5"）
+- **brewTime** — 总冲煮时间（如 "2:30", "3分钟"）
+- **flavor** — 风味描述（文字描述本次冲煮的实际风味）
+- **score** — 评分（0-100 分）
+- **memo** — 备注（额外的观察或调整建议）
+- **brewedAt** — 冲煮时间（ISO 日期字符串，默认当前时间）
+
+### Step 2: Confirm and Save
+
+展示收集到的信息，确认后调用 `brew_guide_upsert_note`。
+
+### Complete Note Data Structure
+
+```json
+{
+  "beanId": "string (associated coffee bean ID)",
+  "method": "string (e.g. V60, Espresso)",
+  "grindSize": "string (grind setting)",
+  "waterTemp": "number (Celsius)",
+  "ratio": "string (e.g. 1:15)",
+  "brewTime": "string (total brew time)",
+  "flavor": "string (flavor description)",
+  "score": "number (0-100)",
+  "memo": "string (additional notes)",
+  "brewedAt": "string (ISO datetime)"
+}
+```
+
+### Example Brewing Note Entry
+
+```
+User: 刚用 V60 冲了那个秘鲁豆子，记录一下
+
+Agent:
+好的！我先查一下你的咖啡豆记录。
+
+[Call brew_guide_list_recent with table: "coffee_beans"]
+
+找到了「秘鲁 美景庄园 SL-09 水洗」(bean_xxx)。请告诉我冲煮参数：
+1. 研磨度？
+2. 水温？
+3. 粉水比？
+4. 总冲煮时间？
+5. 风味感受如何？
+6. 评分（0-100）？
+
+User: Comandante 24格，92度，1:15，2分30秒，柑橘酸很明亮，花香明显，85分
+
+Agent:
+准备录入冲煮记录：
+{
+  beanId: "bean_xxx",
+  method: "V60",
+  grindSize: "Comandante 24 clicks",
+  waterTemp: 92,
+  ratio: "1:15",
+  brewTime: "2:30",
+  flavor: "柑橘酸很明亮，花香明显",
+  score: 85,
+  brewedAt: "2026-04-01T07:30:00+08:00"
+}
+
+确认保存？
+
+[User: 确认]
+
+[Call brew_guide_upsert_note with complete data]
+```
+
+### Note Anti-Patterns
+
+❌ **NEVER** record a brewing note without trying to associate it with a `beanId`
+❌ **NEVER** skip asking for core parameters (method, grindSize, waterTemp, ratio)
+❌ **NEVER** save score outside the 0-100 range
+
+---
+
+## Deleting Records
+
+Use `brew_guide_delete_records` to soft-delete records. This sets `deleted_at` and `updated_at` timestamps — it does **NOT** physically remove data.
+
+### Parameters
+
+- **table** — 目标表名，必须是以下之一：`coffee_beans`, `brewing_notes`, `custom_equipments`, `custom_methods`
+- **ids** — 要删除的记录 ID 数组（至少 1 个）
+
+### Workflow
+
+1. **Confirm before deleting** — Always show the record details (use `brew_guide_list_recent`) and ask user to confirm before deletion.
+2. **Call `brew_guide_delete_records`** with the table name and record IDs.
+3. **Report result** — Tell the user how many records were soft-deleted.
+
+### Example
+
+```
+User: 把那个秘鲁豆子的记录删掉
+
+Agent:
+我先确认一下。你要删除的是这条记录吗？
+
+- ID: bean_xxx
+- 名称：秘鲁 美景庄园 SL-09 水洗
+- 烘焙商：Finish Line Coffee
+
+确认删除？（这是软删除，数据不会被物理移除）
+
+[User: 确认]
+
+[Call brew_guide_delete_records with table: "coffee_beans", ids: ["bean_xxx"]]
+
+已软删除 1 条咖啡豆记录。
+```
+
+### Delete Anti-Patterns
+
+❌ **NEVER** delete records without first showing record details and getting user confirmation
+❌ **NEVER** use an invalid table name (only the four listed tables are allowed)
+
+---
+
 ## Querying Records
 
-When user asks about beans, use `brew_guide_list_recent` to show recent entries.
+Use `brew_guide_list_recent` to query any of the four tables, ordered by `updated_at` descending.
 
-When showing records, display complete information including all structured fields.
+### Parameters
+
+- **table** — `coffee_beans`, `brewing_notes`, `custom_equipments`, or `custom_methods`
+- **limit** — 返回记录数量（可选）
+- **includeDeleted** — 是否包含已软删除的记录（可选，默认 false）
+
+### Usage Guidelines
+
+- When user asks about beans → query `coffee_beans`
+- When user asks about brewing history → query `brewing_notes`
+- When user asks about equipment → query `custom_equipments`
+- When user asks about brew methods → query `custom_methods`
+- When showing records, display complete information including all structured fields
+- Before creating a new record, use this tool to check for duplicates or context
